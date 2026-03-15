@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROKHAN // TERMINAL OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100;300;400;700;800&family=Orbitron:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            cyan: '#00f3ff',
+                            blue: '#0066ff',
+                            purple: '#bc13fe',
+                            magenta: '#ff003c',
+                            amber: '#ffb300', // Warning/Meliora Amber
+                            dark: '#030508',
+                            panel: '#0a0f18'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['JetBrains Mono', 'monospace'],
+                        display: ['Orbitron', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #030508;
+            color: #00f3ff;
+            background-image: 
+                linear-gradient(rgba(0, 243, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 243, 255, 0.03) 1px, transparent 1px);
+            background-size: 30px 30px;
+            overflow-x: hidden;
+        }
+
+        /* CRT Scanline Overlay */
+        .crt-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.6;
+        }
+
+        /* Sci-Fi UI Elements */
+        .hud-panel {
+            background: rgba(10, 15, 24, 0.8);
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            box-shadow: inset 0 0 20px rgba(0, 102, 255, 0.2);
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+        
+        .hud-panel::before, .hud-panel::after {
+            content: ''; position: absolute; width: 15px; height: 15px; border: 2px solid #00f3ff;
+        }
+        .hud-panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .hud-panel::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+        .angled-cut {
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+        }
+        .angled-cut-reverse {
+            clip-path: polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px));
+        }
+
+        /* Neon Text Utilities */
+        .text-glow-cyan { text-shadow: 0 0 10px rgba(0, 243, 255, 0.6), 0 0 20px rgba(0, 243, 255, 0.4); }
+        .text-glow-amber { text-shadow: 0 0 10px rgba(255, 179, 0, 0.6), 0 0 20px rgba(255, 179, 0, 0.4); color: #ffb300; }
+        .text-glow-magenta { text-shadow: 0 0 10px rgba(255, 0, 60, 0.6), 0 0 20px rgba(255, 0, 60, 0.4); color: #ff003c; }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #030508; border-left: 1px solid rgba(0,243,255,0.1); }
+        ::-webkit-scrollbar-thumb { background: #0066ff; border: 1px solid #00f3ff; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f3ff; }
+
+        /* Animations */
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 1px) }
+            40% { transform: translate(-1px, -1px) }
+            60% { transform: translate(2px, 1px) }
+            80% { transform: translate(1px, -1px) }
+            100% { transform: translate(0) }
+        }
+        .glitch-hover:hover { animation: glitch 0.2s linear infinite; }
+        
+        .pulse-border { animation: pulseBorder 2s infinite; }
+        @keyframes pulseBorder {
+            0% { border-color: rgba(0, 243, 255, 0.2); box-shadow: 0 0 0 rgba(0,243,255,0); }
+            50% { border-color: rgba(0, 243, 255, 0.8); box-shadow: 0 0 15px rgba(0,243,255,0.4); }
+            100% { border-color: rgba(0, 243, 255, 0.2); box-shadow: 0 0 0 rgba(0,243,255,0); }
+        }
+
+        .media-frame {
+            border: 1px solid #0066ff;
+            box-shadow: 0 0 15px rgba(0, 102, 255, 0.3);
+            position: relative;
+        }
+        .media-frame::after {
+            content: 'REC •';
+            position: absolute;
+            top: 8px; right: 8px;
+            color: #ff003c;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+            animation: blink 1s step-end infinite;
+            text-shadow: 0 0 5px #ff003c;
+            z-index: 10;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        
+        /* Typewriter effect for AI */
+        .typing-indicator::after {
+            content: '█';
+            animation: blink 1s step-end infinite;
+        }
+    </style>
+</head>
+<body class="selection:bg-cyber-cyan selection:text-black">
+    <div class="crt-overlay"></div>
+
+    <!-- HUD Top Bar -->
+    <nav class="fixed top-0 w-full z-40 bg-cyber-dark/90 border-b border-cyber-cyan/30 backdrop-blur flex justify-between items-center px-4 py-2 font-display text-xs tracking-[0.2em] shadow-[0_0_20px_rgba(0,243,255,0.1)]">
+        <div class="flex items-center gap-4">
+            <div class="w-2 h-2 bg-cyber-magenta animate-ping"></div>
+            <span class="text-cyber-cyan text-glow-cyan">SYS.AUTH // ROKHAN_A</span>
+        </div>
+        <div class="hidden lg:flex gap-8">
+            <a href="#leadership" class="hover:text-white transition-colors">[01] RESILIENCE</a>
+            <a href="#autonomous" class="hover:text-white transition-colors">[02] AUTONOMY</a>
+            <a href="#mechanical" class="hover:text-white transition-colors">[03] HARDWARE</a>
+            <a href="#digital" class="hover:text-white transition-colors">[04] FPGA_LOGIC</a>
+            <a href="#structural" class="hover:text-white transition-colors">[05] STATICS</a>
+        </div>
+        <div class="text-cyber-amber">SYS_ONLINE</div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="pt-32 pb-20 px-6 relative flex flex-col items-center justify-center min-h-[80vh]">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,102,255,0.1)_0%,transparent_60%)]"></div>
+        
+        <div class="text-center z-10 w-full max-w-5xl">
+            <div class="inline-block border border-cyber-cyan/50 text-cyber-cyan px-4 py-1 mb-6 text-xs font-bold tracking-widest uppercase angled-cut bg-cyber-blue/10">
+                Data Uplink Established
+            </div>
+            
+            <h1 class="font-display text-5xl md:text-7xl lg:text-8xl font-black text-white mb-2 leading-none uppercase tracking-tighter relative inline-block">
+                Technical <span class="text-cyber-cyan text-glow-cyan">Rigor.</span>
+            </h1>
+            <br/>
+            <h1 class="font-display text-5xl md:text-7xl lg:text-8xl font-black text-white mb-8 leading-none uppercase tracking-tighter relative inline-block glitch-hover">
+                Global <span class="text-glow-amber">Grit.</span>
+            </h1>
+
+            <p class="text-sm md:text-base text-cyber-cyan/70 max-w-2xl mx-auto leading-relaxed mb-10 font-sans border-l-2 border-cyber-cyan pl-4 text-left">
+                > IDENTIFICATION: Specialized Engineering Architect.<br/>
+                > SPECIALTY: Advanced CAD, FPGA computational modeling, Autonomous robotics.<br/>
+                > ORIGIN: Forged through international resettlement and extreme crisis management.
+            </p>
+
+            <div class="flex flex-wrap justify-center gap-6 text-sm">
+                <div class="hud-panel angled-cut px-6 py-3 flex flex-col items-center">
+                    <span class="text-xs text-cyber-cyan/50 mb-1">GPA_RATING</span>
+                    <span class="text-xl font-display font-bold text-white">3.359<span class="text-cyber-cyan">/4.00</span></span>
+                </div>
+                <div class="hud-panel angled-cut-reverse px-6 py-3 flex flex-col items-center">
+                    <span class="text-xs text-cyber-cyan/50 mb-1">PRIMARY_FOCUS</span>
+                    <span class="text-xl font-display font-bold text-white text-glow-cyan">MECH & AUTONOMY</span>
+                </div>
+                <div class="hud-panel angled-cut px-6 py-3 flex flex-col items-center">
+                    <span class="text-xs text-cyber-cyan/50 mb-1">STATUS</span>
+                    <span class="text-xl font-display font-bold text-cyber-amber text-glow-amber">AWARD WINNER</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 pb-32">
+
+        <!-- DASHBOARD 1: GLOBAL LEADERSHIP & RESILIENCE -->
+        <section id="leadership" class="scroll-mt-24 mb-32 relative">
+            <div class="flex items-end gap-4 mb-8 border-b border-cyber-cyan/30 pb-2">
+                <h2 class="font-display text-4xl font-black text-white">01 // GLOBAL_RESILIENCE</h2>
+                <span class="text-cyber-cyan/50 text-sm mb-1 hidden sm:block">CRISIS_MANAGEMENT_PROTOCOL</span>
+            </div>
+            
+            <div class="grid lg:grid-cols-12 gap-8">
+                <!-- Data Readouts -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="hud-panel angled-cut p-6">
+                        <h4 class="text-cyber-magenta font-display text-sm tracking-widest mb-3">>> PROBLEM_STATEMENT</h4>
+                        <p class="text-sm leading-relaxed text-gray-300" id="desc-leadership">
+                            Navigating severe geopolitical instability to direct the emergency international relocation and resettlement of a multi-member family from Afghanistan to the US. Required immediate mastery of executive decision-making, crisis management, and legal frameworks while sustaining rigorous STEM academic excellence.
+                        </p>
+                    </div>
+                    
+                    <div class="hud-panel p-6 border-l-2 border-cyber-cyan">
+                        <h4 class="text-cyber-cyan font-display text-sm tracking-widest mb-3">>> TECH_&_SOFT_STACK</h4>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <span class="px-2 py-1 bg-cyber-blue/20 border border-cyber-blue text-cyber-cyan">Executive Decision-Making</span>
+                            <span class="px-2 py-1 bg-cyber-blue/20 border border-cyber-blue text-cyber-cyan">Crisis Management</span>
+                            <span class="px-2 py-1 bg-cyber-blue/20 border border-cyber-blue text-cyber-cyan">Cross-Cultural Comm</span>
+                            <span class="px-2 py-1 bg-cyber-blue/20 border border-cyber-blue text-cyber-cyan">Logistics Coordination</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Output Display -->
+                <div class="lg:col-span-7 hud-panel angled-cut-reverse p-1 flex flex-col justify-between">
+                    <div class="bg-cyber-dark w-full h-full p-6 flex flex-col">
+                        <h4 class="text-cyber-amber font-display text-sm tracking-widest mb-4 border-b border-cyber-amber/30 pb-2">>> PERFORMANCE_OUTCOME</h4>
+                        <p class="text-sm text-gray-300 mb-6">
+                            Successfully established long-term housing and financial independence. Leveraged resilience to empower underrepresented students as a TRIO Peer Mentor and MCC Library Assistant. Authored and presented a core study on scholastic resilience.
+                        </p>
+                        <div class="grid grid-cols-2 gap-4 mt-auto">
+                            <div class="border border-cyber-cyan/20 bg-cyber-cyan/5 p-4 text-center pulse-border">
+                                <div class="text-2xl font-display font-bold text-white text-glow-cyan mb-1">2025</div>
+                                <div class="text-[10px] text-cyber-cyan uppercase">Matt Hachee Award Recipient</div>
+                            </div>
+                            <div class="border border-cyber-cyan/20 bg-cyber-cyan/5 p-4 text-center pulse-border">
+                                <div class="text-2xl font-display font-bold text-white text-glow-cyan mb-1">SDG 4</div>
+                                <div class="text-[10px] text-cyber-cyan uppercase">Advanced UN Goals (AIESEC India)</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD 2: AUTONOMOUS SYSTEMS -->
+        <section id="autonomous" class="scroll-mt-24 mb-32 relative">
+            <div class="flex flex-wrap items-end gap-4 mb-8 border-b border-cyber-cyan/30 pb-2 justify-between">
+                <div class="flex items-end gap-4">
+                    <h2 class="font-display text-4xl font-black text-white">02 // AUTONOMOUS_SYSTEMS</h2>
+                    <span class="text-cyber-cyan/50 text-sm mb-1 hidden sm:block">ENR_161_EV3_ROBOTICS</span>
+                </div>
+                <!-- LLM Trigger Button -->
+                <button onclick="analyzeProject('autonomous')" class="border border-cyber-purple bg-cyber-purple/10 text-cyber-purple text-xs font-bold px-4 py-2 hover:bg-cyber-purple/30 transition-colors uppercase tracking-widest angled-cut flex items-center gap-2 pulse-border">
+                    <span>✨</span> EXTRACT_INDUSTRY_APP
+                </button>
+            </div>
+            
+            <!-- LLM Output Target -->
+            <div id="ai-out-autonomous" class="hidden hud-panel p-4 mb-6 border-l-4 border-l-cyber-purple bg-cyber-purple/5 text-sm text-gray-300 font-mono"></div>
+
+            <div class="grid lg:grid-cols-12 gap-8">
+                <!-- Logic & Stats -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="hud-panel p-6 border-l-2 border-cyber-cyan">
+                        <h4 class="text-cyber-cyan font-display text-sm tracking-widest mb-3">>> PROBLEM_STATEMENT</h4>
+                        <p class="text-sm leading-relaxed text-gray-300" id="desc-autonomous">
+                            Design, program, and refine an autonomous EV3 platform to navigate a color-coded arena, detect randomized targets, and execute precise physical manipulation to sort and score standard and challenging black pucks under strict time constraints.
+                        </p>
+                    </div>
+
+                    <div class="hud-panel angled-cut p-6 bg-cyber-blue/10">
+                        <h4 class="text-cyber-amber font-display text-sm tracking-widest mb-3">>> HARDWARE_&_LOGIC</h4>
+                        <div class="flex flex-wrap gap-2 text-xs font-bold">
+                            <span class="px-2 py-1 text-white bg-black border border-white/20">LEGO Mindstorms EV3</span>
+                            <span class="px-2 py-1 text-cyber-magenta bg-cyber-magenta/10 border border-cyber-magenta/50">Python (.py)</span>
+                            <span class="px-2 py-1 text-cyber-cyan bg-cyber-cyan/10 border border-cyber-cyan/50">PID Line-Following</span>
+                            <span class="px-2 py-1 text-cyber-cyan bg-cyber-cyan/10 border border-cyber-cyan/50">Sensor Fusion</span>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="hud-panel p-4 text-center border-t-2 border-t-cyber-amber">
+                            <div class="text-3xl font-display font-black text-cyber-amber text-glow-amber">24/20</div>
+                            <div class="text-[10px] text-gray-400 mt-1 uppercase">Total Score (Maxed)</div>
+                        </div>
+                        <div class="hud-panel p-4 text-center border-t-2 border-t-cyber-magenta">
+                            <div class="text-3xl font-display font-black text-cyber-magenta text-glow-magenta">14+</div>
+                            <div class="text-[10px] text-gray-400 mt-1 uppercase">Hours PID Debugging</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Live Video Feeds -->
+                <div class="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="media-frame angled-cut-reverse bg-black w-full h-full flex flex-col group overflow-hidden">
+                        <div class="bg-cyber-blue/20 text-cyber-cyan text-[10px] font-bold px-3 py-1 flex justify-between">
+                            <span>CAM_01 // THE_CLAW_INTRO</span>
+                            <span>LIVE_FEED</span>
+                        </div>
+                        <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                            <source src="0126(1).mp4" type="video/mp4">
+                        </video>
+                    </div>
+                    
+                    <div class="media-frame angled-cut bg-black w-full h-full flex flex-col group overflow-hidden">
+                        <div class="bg-cyber-blue/20 text-cyber-cyan text-[10px] font-bold px-3 py-1 flex justify-between">
+                            <span>CAM_02 // PID_TESTING_PROTOCOL</span>
+                            <span>LIVE_FEED</span>
+                        </div>
+                        <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                            <source src="20241212_155742.mp4" type="video/mp4">
+                        </video>
+                    </div>
+                    
+                    <div class="col-span-1 md:col-span-2 hud-panel p-4">
+                        <span class="text-xs text-cyber-cyan/50 uppercase block mb-1">>> SYSTEM_OUTCOME</span>
+                        <p class="text-sm text-white">Developed robust sensor-fusion algorithm preventing color/light sensor conflicts. Engineered "The Claw" lever mechanism. Scored all pucks within 2m:45s parameter window.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD 3: MECHANICAL DESIGN & PROTOTYPING -->
+        <section id="mechanical" class="scroll-mt-24 mb-32 relative">
+            <div class="flex flex-wrap items-end gap-4 mb-8 border-b border-cyber-cyan/30 pb-2 justify-between">
+                <div class="flex items-end gap-4">
+                    <h2 class="font-display text-4xl font-black text-white">03 // MECH_PROTOTYPING</h2>
+                    <span class="text-cyber-cyan/50 text-sm mb-1 hidden sm:block">ENR_153_LAVA_BLITZ</span>
+                </div>
+                <!-- LLM Trigger Button -->
+                <button onclick="analyzeProject('mechanical')" class="border border-cyber-purple bg-cyber-purple/10 text-cyber-purple text-xs font-bold px-4 py-2 hover:bg-cyber-purple/30 transition-colors uppercase tracking-widest angled-cut flex items-center gap-2 pulse-border">
+                    <span>✨</span> EXTRACT_INDUSTRY_APP
+                </button>
+            </div>
+
+            <!-- LLM Output Target -->
+            <div id="ai-out-mechanical" class="hidden hud-panel p-4 mb-6 border-l-4 border-l-cyber-purple bg-cyber-purple/5 text-sm text-gray-300 font-mono"></div>
+            
+            <div class="grid lg:grid-cols-12 gap-8">
+                <!-- Specs -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="hud-panel p-6 border-l-2 border-cyber-cyan">
+                        <h4 class="text-cyber-cyan font-display text-sm tracking-widest mb-3">>> PROBLEM_STATEMENT</h4>
+                        <p class="text-sm leading-relaxed text-gray-300" id="desc-mechanical">
+                            Machine, assemble, and optimize a functional high-velocity vehicle chassis to complete an array of tasks. Required balancing opposing constraints: maximizing sprint speed vs. maintaining torque for weight-lifting, alongside rigorous dimensional tolerances and turn radii.
+                        </p>
+                    </div>
+                    
+                    <div class="hud-panel angled-cut p-6 bg-cyber-magenta/10 border-cyber-magenta/30">
+                        <h4 class="text-cyber-magenta font-display text-sm tracking-widest mb-4">>> RECORD_METRICS</h4>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b border-cyber-magenta/20 pb-2">
+                                <span class="text-xs text-gray-400">SPRINT_RECORD</span>
+                                <span class="text-xl font-display font-bold text-white text-glow-magenta">2.09s</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-cyber-magenta/20 pb-2">
+                                <span class="text-xs text-gray-400">OVAL_TIME</span>
+                                <span class="text-xl font-display font-bold text-white">10.01s</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-cyber-magenta/20 pb-2">
+                                <span class="text-xs text-gray-400">MASS_TOWED</span>
+                                <span class="text-xl font-display font-bold text-white">1650g</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-cyber-cyan font-bold">CLASS_RANK</span>
+                                <span class="text-xl font-display font-black text-cyber-cyan text-glow-cyan">1ST</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-xs text-gray-500 font-mono">
+                        > STACK: SolidWorks, Manual Milling, 3D Slicing, Gear Calibration (60/20 & 20/60).
+                    </div>
+                </div>
+
+                <!-- High-Res Construction Grid -->
+                <div class="lg:col-span-8">
+                    <div class="grid grid-cols-2 gap-4 h-full">
+                        <div class="media-frame group overflow-hidden relative">
+                            <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                                <source src="./20241204_183632.mp4" type="video/mp4">
+                            </video>
+                            <div class="absolute bottom-0 w-full bg-black/80 text-[10px] text-cyber-cyan px-2 py-1 border-t border-cyber-cyan/50">PHASE_01: BARE_CHASSIS_MACHINING</div>
+                            </div>   
+                        <div class="media-frame group overflow-hidden relative">
+                            <img src="20241215_200519.jpg" alt="Harware Assembly" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500">
+                            <div class="absolute bottom-0 w-full bg-black/80 text-[10px] text-cyber-cyan px-2 py-1 border-t border-cyber-cyan/50">PHASE_02: Hardware_Assembly</div>
+                        </div>
+                        <div class="media-frame group overflow-hidden relative">
+                            <img src="20241215_231101.jpg" alt="Painting" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500">
+                            <div class="absolute bottom-0 w-full bg-black/80 text-[10px] text-cyber-cyan px-2 py-1 border-t border-cyber-cyan/50">PHASE_03: AESTHETIC_DETAILING</div>
+                        </div>
+                        <div class="media-frame group overflow-hidden relative border-cyber-amber shadow-[0_0_20px_rgba(255,179,0,0.3)]">
+                            <img src="20241215_231418.jpg" alt="Final Lava Blitz" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-500">
+                            <div class="absolute bottom-0 w-full bg-cyber-amber/90 text-[10px] text-black font-bold px-2 py-1">FINAL_ASSEMBLY: LAVA_BLITZ</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD 4: DIGITAL SYSTEMS & FPGA -->
+        <section id="digital" class="scroll-mt-24 mb-32 relative">
+            <div class="flex flex-wrap items-end gap-4 mb-8 border-b border-cyber-cyan/30 pb-2 justify-between">
+                <div class="flex items-end gap-4">
+                    <h2 class="font-display text-4xl font-black text-white">04 // DIGITAL_SYSTEMS</h2>
+                    <span class="text-cyber-cyan/50 text-sm mb-1 hidden sm:block">ENR_157_FPGA_MICROWAVE</span>
+                </div>
+                <!-- LLM Trigger Button -->
+                <button onclick="analyzeProject('digital')" class="border border-cyber-purple bg-cyber-purple/10 text-cyber-purple text-xs font-bold px-4 py-2 hover:bg-cyber-purple/30 transition-colors uppercase tracking-widest angled-cut flex items-center gap-2 pulse-border">
+                    <span>✨</span> EXTRACT_INDUSTRY_APP
+                </button>
+            </div>
+
+            <!-- LLM Output Target -->
+            <div id="ai-out-digital" class="hidden hud-panel p-4 mb-6 border-l-4 border-l-cyber-purple bg-cyber-purple/5 text-sm text-gray-300 font-mono"></div>
+            
+            <div class="grid lg:grid-cols-12 gap-8">
+                <!-- Text Content -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="hud-panel p-6 border-l-2 border-cyber-cyan">
+                        <h4 class="text-cyber-cyan font-display text-sm tracking-widest mb-3">>> PROBLEM_STATEMENT</h4>
+                        <p class="text-sm leading-relaxed text-gray-300" id="desc-digital">
+                            Engineer a functional digital microwave control system. Required mastering the complete design flow: from software-based digital logic simulation to reliable physical hardware execution utilizing a Finite State Machine (FSM).
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="hud-panel angled-cut p-4 text-center border-t-2 border-t-cyber-cyan bg-cyber-cyan/5">
+                            <div class="text-3xl font-display font-black text-cyber-cyan text-glow-cyan">52/60</div>
+                            <div class="text-[10px] text-gray-400 mt-1 uppercase">Subtotal Assessment</div>
+                        </div>
+                        <div class="hud-panel angled-cut-reverse p-4 text-center border-t-2 border-t-cyber-cyan bg-cyber-cyan/5">
+                            <div class="text-3xl font-display font-black text-white">10/10</div>
+                            <div class="text-[10px] text-cyber-cyan mt-1 uppercase">Perfect Wiring Score</div>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-gray-500 font-mono bg-black/50 p-4 border border-white/10 rounded">
+                        <span class="text-cyber-magenta">> STACK_INITIALIZE:</span> Quartus Prime | VHDL | DE-Lite Max 10 FPGA | Schematic Capture | BCD 7-Segment.
+                        <br/><br/>
+                        <span class="text-cyber-amber">> OUTCOME:</span> Deployed and verified schematic capture design on physical FPGA board with zero final-phase logic errors.
+                    </div>
+                </div>
+                
+                <!-- Circuit / FPGA Imagery -->
+                <div class="lg:col-span-7 flex flex-col gap-4">
+                    <div class="media-frame h-64 md:h-80 w-full relative group overflow-hidden">
+                        <img src="FPGA.png" alt="FPGA Setup" class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute top-2 left-2 bg-black/80 border border-cyber-cyan/50 text-cyber-cyan px-3 py-1 text-xs font-bold angled-cut">
+                            HARDWARE_INTEGRATION_HERO
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 h-48">
+                        <div class="media-frame relative group overflow-hidden">
+                            <img src="20250517_154114.jpg" alt="Breadboard Top Down" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute bottom-0 w-full bg-black/80 text-[10px] text-cyber-cyan px-2 py-1 border-t border-cyber-cyan/50">PHYSICAL_WIRING_MAP</div>
+                        </div>
+                        <div class="media-frame relative group overflow-hidden bg-white">
+                            <img src="Microwave project schematic.png" alt="Schematic" class="w-full h-full object-contain p-2 group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-cyan px-2 py-1 border-t border-cyber-cyan/50">SCHEMATIC_CAPTURE</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD 5: STRUCTURAL ANALYSIS -->
+        <section id="structural" class="scroll-mt-24 mb-16 relative">
+            <div class="flex flex-wrap items-end gap-4 mb-8 border-b border-cyber-cyan/30 pb-2 justify-between">
+                <div class="flex items-end gap-4">
+                    <h2 class="font-display text-4xl font-black text-white">05 // STRUCTURAL_ANALYSIS</h2>
+                    <span class="text-cyber-cyan/50 text-sm mb-1 hidden sm:block">ENR_251_THUNDER_WHEEL</span>
+                </div>
+                <!-- LLM Trigger Button -->
+                <button onclick="analyzeProject('structural')" class="border border-cyber-purple bg-cyber-purple/10 text-cyber-purple text-xs font-bold px-4 py-2 hover:bg-cyber-purple/30 transition-colors uppercase tracking-widest angled-cut flex items-center gap-2 pulse-border">
+                    <span>✨</span> EXTRACT_INDUSTRY_APP
+                </button>
+            </div>
+
+            <!-- LLM Output Target -->
+            <div id="ai-out-structural" class="hidden hud-panel p-4 mb-6 border-l-4 border-l-cyber-purple bg-cyber-purple/5 text-sm text-gray-300 font-mono"></div>
+            
+            <div class="grid lg:grid-cols-12 gap-8">
+                <!-- Info -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="hud-panel p-6 border-l-2 border-cyber-cyan">
+                        <h4 class="text-cyber-cyan font-display text-sm tracking-widest mb-3">>> PROBLEM_STATEMENT</h4>
+                        <p class="text-sm leading-relaxed text-gray-300" id="desc-structural">
+                            Investigate structural behavior of an original statically indeterminate truss system ("Thunder Wheel") subjected to rotating eccentric loads. Determine accuracy of classical Method of Sections analysis against real-world physical forces exhibiting redundant load paths and joint friction.
+                        </p>
+                    </div>
+
+                    <div class="hud-panel angled-cut p-6 bg-cyber-amber/10 border-cyber-amber/30">
+                        <h4 class="text-cyber-amber font-display text-sm tracking-widest mb-4">>> ANALYSIS_RESULTS</h4>
+                        <div class="flex items-center gap-6 mb-4">
+                            <div class="text-4xl font-display font-black text-cyber-amber text-glow-amber">46.9%</div>
+                            <div class="text-[10px] text-gray-300 uppercase leading-tight">Calculated Force<br/>Discrepancy</div>
+                        </div>
+                        <p class="text-xs text-gray-400">
+                            Proved limitations of idealized statics theory by measuring discrepancy driven by physical load sharing. Engineered dual A-frame structure securing the top prize for analytical capability.
+                        </p>
+                    </div>
+
+                    <div class="hud-panel p-4 text-center border border-cyber-amber bg-black pulse-border">
+                        <div class="text-xl font-display font-black text-white uppercase tracking-widest">1st Prize Winner</div>
+                        <div class="text-[10px] text-cyber-amber mt-1 uppercase">Design Champion Trophy</div>
+                    </div>
+                </div>
+
+                <!-- Posters & Photos -->
+                <div class="lg:col-span-7 flex flex-col gap-4">
+                    <div class="grid grid-cols-2 gap-4 h-64">
+                        <div class="media-frame relative group overflow-hidden">
+                            <img src="25-12-23_17-26-24-143.png" alt="Trophy" class="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute bottom-0 w-full bg-black/80 text-[10px] text-cyber-cyan px-2 py-1 border-t border-cyber-cyan/50">CHAMPION_ACHIEVEMENT</div>
+                        </div>
+                        <div class="media-frame relative group overflow-hidden">
+                            <img src="1049121065d.jpg" alt="Thunder Wheel Team" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute bottom-0 w-full bg-black/80 text-[10px] text-cyber-cyan px-2 py-1 border-t border-cyber-cyan/50">Design_Display</div>
+                        </div>
+                    </div>
+                    
+                    <div class="media-frame w-full relative group overflow-hidden">
+                        <img src="Poster.png" alt="Statics Poster" class="w-full h-auto object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-300">
+                        <div class="absolute top-2 right-2 bg-black/90 border border-cyber-magenta text-cyber-magenta px-3 py-1 text-[10px] font-bold">
+                            DATA_VISUALIZATION_POSTER
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- AI TERMINAL CHAT UI -->
+    <button onclick="toggleTerminal()" class="fixed bottom-6 right-6 z-50 hud-panel angled-cut px-4 py-3 bg-cyber-dark border border-cyber-cyan text-cyber-cyan font-bold flex items-center gap-2 hover:bg-cyber-cyan/10 transition-colors shadow-[0_0_15px_rgba(0,243,255,0.3)]">
+        <span class="animate-pulse">✨</span> SYS.AI_ASSISTANT
+    </button>
+
+    <div id="ai-terminal" class="fixed bottom-20 right-6 z-50 w-80 sm:w-96 h-[400px] hud-panel bg-black/95 border border-cyber-cyan shadow-[0_0_30px_rgba(0,102,255,0.4)] flex-col hidden">
+        <div class="bg-cyber-blue/20 border-b border-cyber-cyan/50 px-4 py-2 flex justify-between items-center text-xs text-cyber-cyan font-bold">
+            <span>TERMINAL // ROKHAN_AI</span>
+            <button onclick="toggleTerminal()" class="text-white hover:text-cyber-magenta">X</button>
+        </div>
+        <div id="chat-history" class="flex-1 overflow-y-auto p-4 space-y-4 text-xs font-mono">
+            <div class="text-cyber-cyan/70">
+                > SYSTEM ONLINE.<br>
+                > Loading engineering parameters...<br>
+                > I am the AI construct of Rokhan Ahmadzai's portfolio. Ask me about his mechanical designs, FPGA programming, or leadership experience.
+            </div>
+        </div>
+        <div class="border-t border-cyber-cyan/30 p-2 flex bg-cyber-dark">
+            <span class="text-cyber-cyan mr-2 font-bold">></span>
+            <input type="text" id="chat-input" placeholder="Query data..." class="flex-1 bg-transparent border-none outline-none text-white text-xs font-mono placeholder-gray-600" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-cyber-cyan/30 bg-black/80 backdrop-blur py-6 relative z-10 mt-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-[10px] font-mono text-cyber-cyan/50">
+            <div>// SYS.ARCHITECT: ROKHAN AHMADZAI</div>
+            <div class="flex items-center gap-2">
+                <div class="w-1 h-1 bg-cyber-cyan rounded-full animate-pulse"></div>
+                CONNECTION_SECURE_2026
+            </div>
+        </div>
+    </footer>
+
+    <!-- GEMINI API INTEGRATION SCRIPT -->
+    <script>
+        // API Configuration
+        const apiKey = ""; // Set by runtime execution environment
+
+        // Core fetch function with exponential backoff
+        async function fetchGeminiContent(promptText, systemPromptText) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: promptText }] }],
+                systemInstruction: { parts: [{ text: systemPromptText }] }
+            };
+
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            
+            for (let attempt = 0; attempt <= delays.length; attempt++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text || "NO_DATA_RETURNED";
+                } catch (error) {
+                    if (attempt === delays.length) {
+                        return "[ERROR: CONNECTION_TIMEOUT] Unable to connect to LLM core.";
+                    }
+                    await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+                }
+            }
+        }
+
+        // ==========================================
+        // FEATURE 1: EXTRACT INDUSTRY APPLICATIONS
+        // ==========================================
+        async function analyzeProject(projectId) {
+            const outDiv = document.getElementById(`ai-out-${projectId}`);
+            const descElement = document.getElementById(`desc-${projectId}`);
+            
+            if (!outDiv || !descElement) return;
+
+            // UI Feedback
+            outDiv.classList.remove('hidden');
+            outDiv.innerHTML = `<span class="text-cyber-purple animate-pulse">> ANALYZING_DATA_STREAM...</span>`;
+            
+            const projectContext = descElement.innerText;
+            const sysPrompt = "You are a senior tech/engineering recruiter AI in a cyberpunk world. Keep responses brief (2 short bullet points). Focus purely on how the skills in the provided engineering project directly translate to modern lucrative industry applications (e.g. autonomous driving, aerospace, defense, consumer electronics). Format with text highlights. Do not use markdown outside of asterisks.";
+            const userPrompt = `Analyze this project data: "${projectContext}" and extract 2 high-value industry applications for these skills.`;
+
+            const rawResponse = await fetchGeminiContent(userPrompt, sysPrompt);
+            
+            // Basic formatting to clean up bolding into HTML spans
+            let formattedResponse = rawResponse.replace(/\*\*(.*?)\*\*/g, '<span class="text-cyber-cyan font-bold">$1</span>');
+            
+            outDiv.innerHTML = `
+                <div class="text-cyber-cyan mb-2 font-bold uppercase">> INDUSTRY_SYNC_COMPLETE:</div>
+                <div class="space-y-2 text-white">${formattedResponse}</div>
+            `;
+        }
+
+        // ==========================================
+        // FEATURE 2: AI TERMINAL ASSISTANT
+        // ==========================================
+        function toggleTerminal() {
+            const terminal = document.getElementById('ai-terminal');
+            terminal.classList.toggle('hidden');
+            terminal.classList.toggle('flex');
+            if (!terminal.classList.contains('hidden')) {
+                document.getElementById('chat-input').focus();
+            }
+        }
+
+        async function sendChatMessage() {
+            const inputField = document.getElementById('chat-input');
+            const message = inputField.value.trim();
+            if (!message) return;
+
+            const chatHistory = document.getElementById('chat-history');
+            
+            // Append User message
+            const userDiv = document.createElement('div');
+            userDiv.className = "text-white mt-4";
+            userDiv.innerHTML = `<span class="text-cyber-magenta">> USER:</span> ${message}`;
+            chatHistory.appendChild(userDiv);
+            
+            inputField.value = '';
+
+            // Typing indicator
+            const aiDiv = document.createElement('div');
+            aiDiv.className = "text-cyber-cyan/80 mt-2";
+            aiDiv.innerHTML = `<span class="text-cyber-cyan">> SYS.AI:</span> <span class="typing-indicator">Processing</span>`;
+            chatHistory.appendChild(aiDiv);
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+
+            // System Instructions contexting the portfolio
+            const sysPrompt = `You are the AI terminal construct for Rokhan Ahmadzai's portfolio. You answer questions about his skills. Context: He is an engineering student. Projects: Lava Blitz (car chassis machining, 2.09s record), EV3 Robotics (Python PID line following), FPGA Microwave (VHDL, Quartus Prime, DE-Lite Max 10), Thunder Wheel (statics, Method of Sections, MATLAB). Soft skills: Led family resettlement from Afghanistan, extreme crisis management. Tone: Futuristic, cyber, concise, highly professional but slightly robotic/AI-like. Limit responses to 2-3 sentences max.`;
+
+            const responseText = await fetchGeminiContent(message, sysPrompt);
+            
+            // Remove typing indicator and show response
+            aiDiv.innerHTML = `<span class="text-cyber-cyan font-bold">> SYS.AI:</span> ${responseText.replace(/\n/g, '<br>')}`;
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+    </script>
+</body>
+</html>
