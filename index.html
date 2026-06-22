@@ -45,6 +45,22 @@
             overflow-x: hidden;
         }
 
+        /* Stop scrolling during boot sequence */
+        body.booting { overflow: hidden; }
+
+        /* OS Boot Sequence Screen */
+        #boot-screen {
+            position: fixed; inset: 0; z-index: 99999;
+            background-color: #020305;
+            display: flex; flex-direction: column; justify-content: center;
+            padding: 2rem; font-family: 'JetBrains Mono', monospace; font-size: 14px;
+            color: #00f3ff; text-shadow: 0 0 8px rgba(0,243,255,0.8);
+            transition: opacity 0.8s ease-out;
+        }
+        .hidden-boot {
+            opacity: 0; pointer-events: none; 
+        }
+
         /* 3D Global Background Canvas */
         #global-3d-bg {
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -56,41 +72,6 @@
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%);
             background-size: 100% 4px; pointer-events: none; z-index: -5; opacity: 0.4;
-        }
-
-        /* Custom Cyberpunk Cursor */
-        @media (pointer: fine) {
-            * { cursor: none !important; }
-        }
-        .cyber-cursor-dot {
-            position: fixed; top: 0; left: 0; width: 6px; height: 6px;
-            background-color: #00f3ff; border-radius: 50%; pointer-events: none;
-            z-index: 99999; box-shadow: 0 0 10px #00f3ff, 0 0 20px #00f3ff;
-            transform: translate(-50%, -50%); will-change: transform;
-        }
-        .cyber-cursor-outline {
-            position: fixed; top: 0; left: 0; width: 40px; height: 40px;
-            border: 1px solid rgba(0, 243, 255, 0.5); border-radius: 50%;
-            pointer-events: none; z-index: 99998;
-            transition: width 0.2s, height 0.2s, border-color 0.2s;
-            box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.2);
-            transform: translate(-50%, -50%); will-change: transform;
-        }
-        .cyber-cursor-outline::before, .cyber-cursor-outline::after {
-            content: ''; position: absolute; background-color: rgba(0, 243, 255, 0.8);
-            transition: background-color 0.2s;
-        }
-        .cyber-cursor-outline::before { top: -5px; bottom: -5px; left: 50%; width: 1px; transform: translateX(-50%); }
-        .cyber-cursor-outline::after { left: -5px; right: -5px; top: 50%; height: 1px; transform: translateY(-50%); }
-        .cyber-cursor-outline.hover-state {
-            width: 60px; height: 60px; border-color: #ff003c;
-            background-color: rgba(255, 0, 60, 0.1); box-shadow: inset 0 0 15px rgba(255, 0, 60, 0.4);
-        }
-        .cyber-cursor-outline.hover-state::before, .cyber-cursor-outline.hover-state::after {
-            background-color: rgba(255, 0, 60, 0.8);
-        }
-        .cyber-cursor-dot.hover-state {
-            background-color: #ff003c; box-shadow: 0 0 10px #ff003c, 0 0 20px #ff003c;
         }
 
         /* Spatial Glass UI Elements */
@@ -162,6 +143,11 @@
             animation: blink 1s step-end infinite; text-shadow: 0 0 5px #ff003c; z-index: 10;
         }
         @keyframes blink { 50% { opacity: 0; } }
+        
+        .typing-indicator::after {
+            content: '█';
+            animation: blink 1s step-end infinite;
+        }
 
         /* 3D CSS Tilt Cards */
         .tilt-card { transform-style: preserve-3d; perspective: 1000px; position: relative; }
@@ -185,7 +171,8 @@
             padding: 4px 8px; font-family: 'JetBrains Mono', monospace; width: 80px; text-align: right; outline: none;
         }
         .physics-input:focus { border-color: #00f3ff; box-shadow: 0 0 10px rgba(0,243,255,0.2); }
-        #physics-canvas-container { width: 100%; height: 100%; min-height: 400px; }
+        #physics-canvas-container { width: 100%; height: 100%; min-height: 400px; cursor: grab; }
+        #physics-canvas-container:active { cursor: grabbing; }
         .data-table th { border-bottom: 1px solid rgba(0, 243, 255, 0.4); padding: 8px; color: #00f3ff; }
         .data-table td { padding: 4px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
 
@@ -441,11 +428,26 @@
                 </div>
                 
                 <div class="lg:col-span-8 h-fit flex flex-col gap-6">
+                    
+                    <!-- NEW: Spectrum News Broadcast Panel -->
+                    <a href="https://spectrumlocalnews.com/nys/rochester/news/2026/05/14/afghan-immigrant-treacherous-journey-u-s-" target="_blank" class="w-full media-frame group overflow-hidden relative border-cyber-magenta/50 hover:border-cyber-magenta shadow-[0_0_20px_rgba(255,0,60,0.1)] hover:shadow-[0_0_30px_rgba(255,0,60,0.3)] bg-black reveal delay-100 cursor-pointer block h-auto min-h-[140px] transition-all">
+                        <div class="absolute inset-0 bg-gradient-to-r from-cyber-magenta/10 to-black/90 z-0"></div>
+                        <div class="relative z-10 p-5 md:p-6 flex flex-col justify-center h-full w-full sm:w-[80%]">
+                            <span class="text-cyber-magenta font-bold tracking-widest text-[10px] mb-2 border border-cyber-magenta/30 px-2 py-0.5 bg-cyber-magenta/10 w-fit animate-pulse">>> LIVE_BROADCAST</span>
+                            <h3 class="font-display text-white text-lg md:text-xl font-bold uppercase tracking-wide group-hover:text-cyber-magenta transition-colors duration-300">Spectrum News 1 Feature</h3>
+                            <p class="text-xs text-gray-300 font-mono mt-1 sm:mt-2 line-clamp-2 sm:line-clamp-none">"Afghan immigrant's treacherous journey to U.S."</p>
+                        </div>
+                        <div class="hidden sm:flex absolute right-6 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border-2 border-cyber-magenta/50 items-center justify-center bg-black/50 group-hover:border-cyber-magenta group-hover:scale-110 transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] group-hover:shadow-[0_0_20px_rgba(255,0,60,0.6)]">
+                            <svg class="w-5 h-5 text-cyber-magenta ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                        <div class="absolute bottom-0 w-full bg-cyber-magenta/90 text-[10px] text-white font-black px-3 py-1.5 tracking-widest backdrop-blur-md">CLICK_TO_INITIALIZE_PLAYBACK</div>
+                    </a>
+                    
                     <!-- BENTO BOX MEDIA GRID -->
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 auto-rows-[10rem] md:auto-rows-[12rem]">
                         
                         <!-- Media 4: Documentary (HERO SIZE: 2x2) -->
-                        <div class="col-span-2 md:col-span-2 row-span-2 media-frame group overflow-hidden relative bg-black reveal delay-100 cursor-pointer">
+                        <div class="col-span-2 md:col-span-2 row-span-2 media-frame group overflow-hidden relative bg-black reveal delay-200 cursor-pointer">
                             <img src="./Doc.gif" alt="Documentary Feature" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700" onerror="this.style.display='none'">
                             <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                 <div class="w-16 h-16 border-2 border-cyber-cyan rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm shadow-[0_0_15px_rgba(0,243,255,0.5)]">
@@ -458,7 +460,7 @@
                         </div>
 
                         <!-- Media 5: Public Speaking (Wide: 2x1) -->
-                        <div class="col-span-2 md:col-span-2 row-span-1 media-frame group overflow-hidden relative bg-black reveal delay-200 cursor-pointer">
+                        <div class="col-span-2 md:col-span-2 row-span-1 media-frame group overflow-hidden relative bg-black reveal delay-300 cursor-pointer">
                             <img src="./Speech.png" alt="Keynote Speaker" class="w-full h-full object-cover object-top opacity-60 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
                             <div class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                                 <div class="w-12 h-12 border-2 border-white rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -469,25 +471,25 @@
                         </div>  
 
                         <!-- Media 1: Origin (1x1) -->
-                        <div class="col-span-1 md:col-span-1 row-span-1 media-frame group overflow-hidden relative bg-black reveal delay-300 cursor-pointer">
+                        <div class="col-span-1 md:col-span-1 row-span-1 media-frame group overflow-hidden relative bg-black reveal delay-400 cursor-pointer">
                             <img src="./Origin.avif" alt="Origin Context" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
                             <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-cyan px-3 py-2 border-t border-cyber-cyan/50 font-bold tracking-widest backdrop-blur-md truncate">PHASE_01: AFG</div>
                         </div>
 
                         <!-- Media 2: The Journey (1x1) -->
-                        <div class="col-span-1 md:col-span-1 row-span-1 media-frame group overflow-hidden relative bg-black reveal delay-400 cursor-pointer">
+                        <div class="col-span-1 md:col-span-1 row-span-1 media-frame group overflow-hidden relative bg-black reveal delay-500 cursor-pointer">
                             <img src="./Relocation.jpg" alt="Logistics" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
                             <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-cyan px-3 py-2 border-t border-cyber-cyan/50 font-bold tracking-widest backdrop-blur-md truncate">PHASE_02: JOURNEY</div>
                         </div>   
 
                         <!-- Media 3: Resettlement (Wide: 2x1) -->
-                        <div class="col-span-2 md:col-span-2 row-span-1 media-frame group overflow-hidden relative bg-black reveal delay-500 cursor-pointer">
+                        <div class="col-span-2 md:col-span-2 row-span-1 media-frame group overflow-hidden relative bg-black reveal delay-600 cursor-pointer">
                             <img src="./Roc.jpg" alt="Arrival in USA" class="w-full h-full object-cover object-center opacity-50 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
                             <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-cyan px-3 py-2 border-t border-cyber-cyan/50 font-bold tracking-widest backdrop-blur-md">PHASE_03: USA_RESETTLEMENT</div>
                         </div>   
 
                         <!-- Media 6: Mentorship/Award (Wide: 2x1) -->
-                        <div class="col-span-2 md:col-span-2 row-span-1 media-frame group overflow-hidden relative border-cyber-amber shadow-[0_0_30px_rgba(255,179,0,0.15)] bg-black reveal delay-600 cursor-pointer">
+                        <div class="col-span-2 md:col-span-2 row-span-1 media-frame group overflow-hidden relative border-cyber-amber shadow-[0_0_30px_rgba(255,179,0,0.15)] bg-black reveal delay-700 cursor-pointer">
                             <img src="./Award.jpg" alt="Matt Hachee Award" class="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
                             <div class="absolute bottom-0 w-full bg-cyber-amber/95 text-[10px] text-black font-black px-3 py-2 tracking-widest backdrop-blur-md">RECOGNITION: MATT_HACHEE_AWARD</div>
                         </div>
@@ -504,6 +506,102 @@
                             <br><br>
                             Before I designed autonomous systems or machined high-velocity chassis, I successfully engineered my family's survival and relocation to the United States. This forged an unbreakable foundation of executive leadership, high-stress decision making, and global grit. I bring this exact level of resilience to every engineering project I tackle.
                         </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- VIEW 1.5: GRADUATION (NEW) -->
+        <!-- ========================================== -->
+        <section id="graduation" class="scroll-mt-32 mb-32 relative">
+            <div class="flex flex-wrap items-end gap-4 mb-8 border-b border-cyber-yellow/30 pb-2 justify-between reveal">
+                <div class="flex items-end gap-4">
+                    <h2 class="font-display text-4xl font-black text-white text-glow-yellow">1.5 // COMMENCEMENT</h2>
+                    <span class="text-cyber-yellow/50 text-sm mb-1 hidden sm:block">A.S. ENGINEERING SCIENCE</span>
+                </div>
+            </div>
+
+            <div class="grid lg:grid-cols-12 gap-8">
+                <!-- Left Column: Metrics & Description -->
+                <div class="lg:col-span-4 space-y-6 reveal delay-100">
+                    <div class="hud-panel p-6 border-l-2 border-cyber-yellow bg-black/40">
+                        <h4 class="text-cyber-yellow font-display text-sm tracking-widest mb-3">>> ACADEMIC_MILESTONE</h4>
+                        <p class="text-sm leading-relaxed text-gray-300">
+                            Successfully completed the rigorous Engineering Science program at Monroe Community College. Demonstrated consistent academic excellence, culminating in Dean's List honors for the final semester.
+                        </p>
+                    </div>
+
+                    <div class="hud-panel angled-cut p-6 bg-cyber-yellow/10 border-cyber-yellow/40">
+                        <h4 class="text-cyber-yellow font-display text-sm tracking-widest mb-4">>> SCHOLASTIC_METRICS</h4>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center border-b border-cyber-yellow/30 pb-2">
+                                <span class="text-xs text-gray-300 font-bold">DEGREE</span>
+                                <span class="text-xl font-display font-bold text-white text-glow-yellow text-right">A.S. Engineering<br>Science</span>
+                            </div>
+                            <div class="flex justify-between items-center border-b border-cyber-yellow/30 pb-2">
+                                <span class="text-xs text-gray-300 font-bold">INSTITUTION</span>
+                                <span class="text-xl font-display font-bold text-white text-right">Monroe Community<br>College</span>
+                            </div>
+                            <div class="flex justify-between items-center mt-4 bg-cyber-amber/10 p-2 border border-cyber-amber/30 rounded">
+                                <span class="text-xs text-cyber-amber font-bold tracking-widest">FINAL SEMESTER</span>
+                                <span class="text-lg font-display font-black text-cyber-amber text-glow-amber">Dean's List</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Media Grid -->
+                <div class="lg:col-span-8 h-fit">
+                    <!-- Top Row: Portraits & Handshake -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                        <div class="media-frame relative group overflow-hidden bg-black aspect-[3/4] reveal delay-200 border-cyber-yellow/40 cursor-pointer">
+                            <img src="./Face.jpeg" alt="Graduation Portrait 1" class="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
+                            <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-yellow px-3 py-2 border-t border-cyber-yellow/50 font-bold tracking-widest backdrop-blur-md">CANDIDATE_PROFILE</div>
+                        </div>
+
+                        <div class="media-frame relative group overflow-hidden bg-black aspect-[3/4] reveal delay-300 border-cyber-yellow/40 cursor-pointer">
+                            <img src="./pORTRAIT.jpeg" alt="Graduation Portrait 2" class="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
+                            <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-yellow px-3 py-2 border-t border-cyber-yellow/50 font-bold tracking-widest backdrop-blur-md">COMMENCEMENT_DAY</div>
+                        </div>
+
+                        <div class="media-frame relative group overflow-hidden bg-black aspect-[3/4] reveal delay-400 border-cyber-yellow/40 cursor-pointer">
+                            <img src="./HANDSHAKE.jpeg" alt="Handshake" class="w-full h-full object-cover object-center opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
+                            <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-yellow px-3 py-2 border-t border-cyber-yellow/50 font-bold tracking-widest backdrop-blur-md">OFFICIAL_CONFERRAL</div>
+                        </div>
+                    </div>
+
+                    <!-- Middle Row: Family/Candid Moments -->
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                        <div class="media-frame relative group overflow-hidden bg-black aspect-square reveal delay-500 border-cyber-yellow/40 cursor-pointer">
+                            <img src="./Hug.jpeg" alt="Family Moment" class="w-full h-full object-cover object-center opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
+                            <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-yellow px-3 py-2 border-t border-cyber-yellow/50 font-bold tracking-widest backdrop-blur-md">SUPPORT_NETWORK</div>
+                        </div>
+                        
+                        <div class="media-frame relative group overflow-hidden bg-black aspect-square reveal delay-600 border-cyber-yellow/40 cursor-pointer">
+                            <img src="./Niece.jpeg" alt="Niece" class="w-full h-full object-cover object-center opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
+                            <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-yellow px-3 py-2 border-t border-cyber-yellow/50 font-bold tracking-widest backdrop-blur-md">NEXT_GENERATION</div>
+                        </div>
+
+                        <div class="media-frame relative group overflow-hidden bg-black aspect-square reveal delay-700 border-cyber-yellow/40 cursor-pointer">
+                            <img src="./Smile.jpeg" alt="Smiling" class="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
+                            <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-yellow px-3 py-2 border-t border-cyber-yellow/50 font-bold tracking-widest backdrop-blur-md">MILESTONE_ACHIEVED</div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom Row: Banners & Certificates -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="media-frame relative group overflow-hidden bg-black aspect-video sm:aspect-[4/3] reveal delay-800 border-cyber-yellow/40 cursor-pointer">
+                            <img src="./STEM Banner.jpeg" alt="STEM Banner" class="w-full h-full object-cover object-center opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
+                            <div class="absolute bottom-0 w-full bg-black/90 text-[10px] text-cyber-yellow px-3 py-2 border-t border-cyber-yellow/50 font-bold tracking-widest backdrop-blur-md">STEM_COHORT_2026</div>
+                        </div>
+
+                        <div class="media-frame relative group overflow-hidden bg-black aspect-video sm:aspect-[4/3] reveal delay-900 border-cyber-yellow/40 cursor-pointer">
+                            <img src="./DeansList.jpg" alt="Dean's List Certificate" class="w-full h-full object-cover object-top opacity-80 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500" onerror="this.style.display='none'">
+                            <div class="absolute top-3 right-3 bg-black/95 border border-cyber-amber text-cyber-amber px-4 py-2 text-xs font-bold tracking-widest backdrop-blur-md shadow-lg">
+                                DEANS_LIST_HONORS
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2385,6 +2483,7 @@
         // INITIALIZE ALL
         // ==========================================
         window.addEventListener('load', () => {
+            initBootSequence();
             initGlobal3D();
             initTiltCards();
             initPhysicsEngine();
@@ -2393,7 +2492,6 @@
             initRadarChart();
             initCyberCursor();
             initNavHighlight();
-            document.body.classList.remove('booting');
         });
 
         // ==========================================
